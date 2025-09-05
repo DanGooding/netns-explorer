@@ -9,6 +9,24 @@ def interface_id_node_name(interface_id: model.InterfaceId) -> str:
 def interface_node_name(interface: model.Interface) -> str:
     return interface_id_node_name(interface.id)
 
+def wrap_command(command: str | None) -> str:
+    if not command:
+        return ''
+
+    target_width = 40
+    break_at = ' -'
+
+    lines = []
+    while len(command) > target_width:
+        break_index = command.rfind(break_at, 0, target_width)
+        if break_index == -1:
+            break
+        lines.append(command[:break_index])
+        command = command[break_index + 1:]
+
+    lines.append(command)
+    return '\n'.join(lines)
+
 def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
     dot = graphviz.Digraph()
 
@@ -24,9 +42,12 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
         else:
             subgraph_name = f'cluster:{namespace.metadata.path}'
         with dot.subgraph(None, subgraph_name) as ns_graph:
+            ns_graph.attr(color='grey')
+            ns_graph.attr(fontcolor='darkblue')
+            ns_graph.attr(label=wrap_command(namespace.metadata.running_process_command))
+
             for interface in namespace.interfaces:
                 ns_graph.node(interface_node_name(interface), interface.name)
-                ns_graph.attr(color='grey')
 
                 if interface.veth_pair_id:
                     # undirected veth pair edge
