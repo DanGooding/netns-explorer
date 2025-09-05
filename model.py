@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv4Network
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Self
 
 type InterfaceId = int
 type InterfaceName = str
@@ -43,8 +43,14 @@ class NamespaceMetadata:
     path: NamespacePath
     running_process_command: Optional[str]
 
+    def is_default(self: Self):
+        return self.path is None
+
 @dataclass
 class Namespace:
     metadata: NamespaceMetadata
     interfaces: list[Interface]
     routing_table: list[Route]
+
+    def is_default(self: Self):
+        return self.metadata.is_default()
