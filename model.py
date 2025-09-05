@@ -39,7 +39,12 @@ class Route:
     gateway: Optional[Gateway]
 
 @dataclass
-class Namespace:
+class NamespaceMetadata:
     path: NamespacePath
+    running_process_command: Optional[str]
+
+@dataclass
+class Namespace:
+    metadata: NamespaceMetadata
     interfaces: list[Interface]
     routing_table: list[Route]

@@ -1,17 +1,18 @@
 import click
 from fabric import Connection
 import ip_command
+import namespace_command
 import model
 
-def discover_namespace(conn: Connection, namespace_path: model.NamespacePath) -> model.Namespace:
-    interfaces_by_id = ip_command.ip_link(conn, namespace_path)
-    for interface_id, ip_addr in ip_command.ip_addr(conn, namespace_path).items():
+def discover_namespace(conn: Connection, metadata: model.NamespaceMetadata) -> model.Namespace:
+    interfaces_by_id = ip_command.ip_link(conn, metadata.path)
+    for interface_id, ip_addr in ip_command.ip_addr(conn, metadata.path).items():
         interfaces_by_id[interface_id].address = ip_addr
 
-    routes = ip_command.ip_route(conn, namespace_path)
+    routes = ip_command.ip_route(conn, metadata.path)
 
     return model.Namespace(
-        path=namespace_path,
+        metadata=metadata,
         interfaces=list(interfaces_by_id.values()),
         routing_table=routes)
 
@@ -20,9 +21,12 @@ def discover_namespace(conn: Connection, namespace_path: model.NamespacePath) ->
 def main(ssh_host: str):
     conn = Connection(ssh_host)
 
-    default_namespace = discover_namespace(conn, None)
-    print(default_namespace)
+    namespace_metadata = namespace_command.list_namespaces(conn)
 
+    for metadata in namespace_metadata:
+        namespace = discover_namespace(conn, metadata)
+
+        print(namespace)
 
 if __name__ == '__main__':
     main()
