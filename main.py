@@ -120,13 +120,7 @@ def parse_ip_routes(lines: list[str]) -> list[Route]:
 
     return routes
 
-
-
-@click.command()
-@click.argument('ssh_host')
-def main(ssh_host: str):
-    conn = Connection(ssh_host)
-
+def discover_namespace(conn: Connection, name: str) -> Namespace:
     interfaces_by_id = parse_ip_links(
         command_lines(conn, 'ip -detail -oneline link'))
     for interface_id, ip_addr in parse_ip_addrs(command_lines(conn, 'ip -oneline address')).items():
@@ -134,10 +128,18 @@ def main(ssh_host: str):
 
     routes = parse_ip_routes(command_lines(conn, 'ip -detail -oneline route'))
 
-    for interface in interfaces_by_id.values():
-        print(interface)
-    for route in routes:
-        print(route)
+    return Namespace(
+        name=name,
+        interfaces=list(interfaces_by_id.values()),
+        routing_table=routes)
+
+@click.command()
+@click.argument('ssh_host')
+def main(ssh_host: str):
+    conn = Connection(ssh_host)
+
+    default_namespace = discover_namespace(conn, 'default')
+    print(default_namespace)
 
 
 if __name__ == '__main__':
