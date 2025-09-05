@@ -1,23 +1,20 @@
 import click
 from fabric import Connection
+from pathlib import Path
+from typing import Optional
+import ip_command
 import model
-import parse
 
-def command_lines(conn: Connection, command: str) -> list[str]:
-    links_result = conn.run(command, hide='both')
-    if links_result.failed:
-        raise RuntimeError(links_result)
-
-    return links_result.stdout.splitlines()
-
-def discover_namespace(conn: Connection, name: str) -> model.Namespace:
-    interfaces_by_id = parse.parse_ip_links(
-        command_lines(conn, 'ip -detail -oneline link'))
-    for interface_id, ip_addr in parse.parse_ip_addrs(command_lines(conn, 'ip -oneline address')).items():
+def discover_namespace(conn: Connection, namespace_file: Optional[Path]) -> model.Namespace:
+    interfaces_by_id = ip_command.ip_link(conn, namespace_file)
+    for interface_id, ip_addr in ip_command.ip_addr(conn, namespace_file).items():
         interfaces_by_id[interface_id].address = ip_addr
 
-    routes = parse.parse_ip_routes(command_lines(conn, 'ip -detail -oneline route'))
+    routes = ip_command.ip_route(conn, namespace_file)
 
+    name = None
+    if namespace_file is not None:
+        name = str(namespace_file)
     return model.Namespace(
         name=name,
         interfaces=list(interfaces_by_id.values()),
@@ -28,7 +25,7 @@ def discover_namespace(conn: Connection, name: str) -> model.Namespace:
 def main(ssh_host: str):
     conn = Connection(ssh_host)
 
-    default_namespace = discover_namespace(conn, 'default')
+    default_namespace = discover_namespace(conn, None)
     print(default_namespace)
 
 

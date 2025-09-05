@@ -37,6 +37,7 @@ class Route:
 
 @dataclass
 class Namespace:
-    name: str
+    name: Optional[str]
+    """ None indicates the default namespace """
     interfaces: list[Interface]
     routing_table: list[Route]
