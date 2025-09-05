@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 from ipaddress import IPv4Address, IPv4Network
+from pathlib import Path
 from typing import Optional
 
 type InterfaceId = int
 type InterfaceName = str
+type NamespacePath = Optional[Path]
+""" None indicates the default namespace """
 
 @dataclass
 class Interface:
@@ -37,7 +40,6 @@ class Route:
 
 @dataclass
 class Namespace:
-    name: Optional[str]
-    """ None indicates the default namespace """
+    path: NamespacePath
     interfaces: list[Interface]
     routing_table: list[Route]
