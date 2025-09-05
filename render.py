@@ -52,7 +52,12 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
             subgraph_color = ColorHash(subgraph_name)
 
             ns_graph.attr(fontcolor=subgraph_color.hex)
-            ns_graph.attr(label=wrap_command(namespace.metadata.running_process_command))
+
+            if namespace.metadata.running_process_command:
+                ns_label = wrap_command(namespace.metadata.running_process_command)
+            else:
+                ns_label = f'empty @ {namespace.metadata.path}'
+            ns_graph.attr(label=ns_label)
 
             for interface in namespace.interfaces:
                 ns_graph.node(interface_node_name(interface, namespace), interface.name,
