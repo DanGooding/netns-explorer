@@ -2,6 +2,7 @@ atomicwrites==1.4.1
 bcrypt==4.3.0
 cffi==1.17.1
 click==8.2.1
+colorhash==2.1.0
 cryptography==45.0.7
 decorator==5.2.1
 Deprecated==1.2.18

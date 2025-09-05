@@ -30,6 +30,8 @@ def main(ssh_host: str, output: Path):
     for metadata in namespace_metadata:
         namespaces.append(discover_namespace(conn, metadata))
 
+    print(*namespaces, sep='\n')
+
     graph = render.render(namespaces)
     with open(output, 'w') as f:
         f.write(graph.source)
