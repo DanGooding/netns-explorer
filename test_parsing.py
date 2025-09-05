@@ -1,10 +1,5 @@
 import main
-from ipaddress import IPv4Address
-
-def test_parse_ip_link_from_file(golden):
-    namespace = main.Namespace(name='test', routing_table=[])
-    interfaces = main.parse_ip_links(golden['input'].splitlines(), namespace).values()
-    assert '\n'.join(str(interface) for interface in interfaces) == golden['output']
+from ipaddress import IPv4Address, IPv4Network
 
 
 ip_link_lines = r'''
@@ -21,8 +16,7 @@ ip_link_lines = r'''
 '''
 
 def test_parse_ip_link():
-    namespace = main.Namespace(name='test', routing_table=[])
-    interfaces = main.parse_ip_links(ip_link_lines.splitlines(), namespace)
+    interfaces = main.parse_ip_links(ip_link_lines.splitlines())
 
     assert len(interfaces) == 10
     assert interfaces[1].name == 'lo'
@@ -60,3 +54,30 @@ def test_parse_ip_addr():
     assert addrs[2] == IPv4Address('111.111.111.111')
     assert addrs[4] == IPv4Address('172.19.0.1')
 
+ip_route_lines = r'''
+unicast default via 123.123.123.1 dev ens3 proto dhcp scope global src 123.123.123.123 metric 1002 mtu 1500 
+unicast 10.10.0.0/24 dev docker0 proto kernel scope link src 10.10.0.1 linkdown 
+unicast 10.106.0.0/20 dev ens4 proto dhcp scope link src 10.106.0.3 metric 1003 mtu 1500 
+unicast 123.123.123.0/24 dev ens3 proto dhcp scope link src 123.123.123.123 metric 1002 mtu 1500 
+unicast 169.254.0.0/16 dev vethc9050f8 proto boot scope link src 169.254.245.179 metric 1062 
+unicast 169.254.0.0/16 dev veth7b712b0 proto boot scope link src 169.254.103.53 metric 1087 
+unicast 169.254.0.0/16 dev vethce324af proto boot scope link src 169.254.114.48 metric 1091 
+unicast 169.254.0.0/16 dev vetha26df2c proto boot scope link src 169.254.137.78 metric 1097 
+unicast 169.254.0.0/16 dev vethdcc6523 proto boot scope link src 169.254.68.83 metric 1101 
+unicast 169.254.169.254 dev ens3 proto boot scope link 
+unicast 172.19.0.0/16 dev docker_gwbridge proto kernel scope link src 172.19.0.1 
+'''
+
+def test_parse_ip_route():
+    routes = main.parse_ip_routes(ip_route_lines.splitlines())
+
+    assert len(routes) == 11
+    assert routes[0].gateway.address == IPv4Address('123.123.123.1')
+    assert routes[0].destination == IPv4Network('0.0.0.0/0')
+    assert routes[0].interface_name == 'ens3'
+
+    assert not routes[1].gateway
+    assert routes[1].destination == IPv4Network('10.10.0.0/24')
+    assert routes[1].interface_name == 'docker0'
+
+    assert routes[9].destination == IPv4Network('169.254.169.254/32')
