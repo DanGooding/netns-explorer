@@ -3,11 +3,8 @@ from colorhash import ColorHash
 import graphviz
 import model
 
-def interface_id_node_name(interface_id: model.InterfaceId, namespace: model.Namespace) -> str:
-    return f'if{interface_id}'
-
 def interface_node_name(interface: model.Interface, namespace: model.Namespace) -> str:
-    return interface_id_node_name(interface.id, namespace)
+    return f'{namespace.metadata.path} {interface.name}'
 
 def route_node_name(route: model.Route, namespace: model.Namespace) -> str:
     return f'{namespace.metadata.path} {route.destination} {route.interface_name}'
@@ -35,11 +32,16 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
     dot.attr(ranksep='2.0')
 
     interfaces_by_namespace_and_name = {}
-    interfaces_by_id = {}
     for namespace in namespaces:
         interfaces_by_namespace_and_name[namespace.metadata.path] = {}
         for interface in namespace.interfaces:
             interfaces_by_namespace_and_name[namespace.metadata.path][interface.name] = interface
+
+    virtual_interface_node_names_by_id = {}
+    for namespace in namespaces:
+        for interface in namespace.interfaces:
+            if interface.veth_pair_id is not None:
+                virtual_interface_node_names_by_id[interface.id] = interface_node_name(interface, namespace)
 
     for namespace in namespaces:
         if namespace.is_default():
@@ -62,7 +64,11 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
                     # undirected veth pair edge
 
                     my_name = interface_node_name(interface, namespace)
-                    other_name = interface_id_node_name(interface.veth_pair_id, None)
+
+                    # we only trust ids to be global for virtual interfaces
+                    other_name = virtual_interface_node_names_by_id.get(interface.veth_pair_id)
+
+                    # don't add duplicate back edge
                     if my_name < other_name:
                         dot.edge(
                             my_name,

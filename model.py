@@ -4,6 +4,10 @@ from pathlib import Path
 from typing import Optional, Self
 
 type InterfaceId = int
+""" ifindex - mostly unique across namespaces, 
+    except for loopback (always 1) and some weird bridge cases I found
+"""
+
 type InterfaceName = str
 type NamespacePath = Optional[Path]
 """ None indicates the default namespace """
