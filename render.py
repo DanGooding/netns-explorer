@@ -35,6 +35,7 @@ def wrap_command(command: str | None) -> str:
 def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
     dot = graphviz.Digraph()
     dot.attr(ranksep='2.0')
+    dot.attr(rankdir='LR')
 
     interfaces_by_namespace_and_name: dict[Path | None, dict[model.InterfaceName, model.Interface]] = {}
     virtual_interface_node_names_by_id = {}
@@ -129,7 +130,8 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
                     dot.node(
                         gateway_node_name(route.gateway),
                         label=f'gateway\n{route.gateway.address}',
-                        shape='diamond')
+                        shape='diamond',
+                        rank='min')
 
                     dot.edge(
                         gateway_node_name(route.gateway),
