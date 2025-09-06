@@ -1,6 +1,7 @@
 from typing import Iterable
 from colorhash import ColorHash
 import graphviz
+from ipaddress import IPv4Address
 from pathlib import Path
 import model
 
@@ -9,6 +10,9 @@ def interface_node_name(interface: model.Interface, namespace: model.Namespace) 
 
 def route_node_name(route: model.Route, namespace: model.Namespace) -> str:
     return f'{namespace.metadata.path} {route.destination} {route.interface_name}'
+
+def gateway_node_name(gateway: model.Gateway) -> str:
+    return f'{gateway.address}'
 
 def wrap_command(command: str | None) -> str:
     if not command:
@@ -33,16 +37,18 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
     dot.attr(ranksep='2.0')
 
     interfaces_by_namespace_and_name: dict[Path | None, dict[model.InterfaceName, model.Interface]] = {}
+    virtual_interface_node_names_by_id = {}
+    interface_addresses: set[IPv4Address] = set()
     for namespace in namespaces:
         interfaces_by_namespace_and_name[namespace.metadata.path] = {}
         for interface in namespace.interfaces:
             interfaces_by_namespace_and_name[namespace.metadata.path][interface.name] = interface
 
-    virtual_interface_node_names_by_id = {}
-    for namespace in namespaces:
-        for interface in namespace.interfaces:
+            interface_addresses.add(interface.address)
+
             if interface.veth_pair_id is not None:
                 virtual_interface_node_names_by_id[interface.id] = interface_node_name(interface, namespace)
+
 
     for namespace in namespaces:
         if namespace.is_default():
@@ -113,5 +119,19 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
                     route_name,
                     dir='back',
                     rank='same')
+
+
+                # gateway might be a bridge interface
+                # but if it's an external router, render it as a node
+                if route.gateway is not None and route.gateway.address not in interface_addresses:
+                    dot.node(
+                        gateway_node_name(route.gateway),
+                        label=f'gateway\n{route.gateway.address}',
+                        shape='diamond')
+
+                    dot.edge(
+                        gateway_node_name(route.gateway),
+                        interface_node_name(interface, namespace),
+                        dir='back')
 
     return dot
