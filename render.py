@@ -52,7 +52,7 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
 
     for namespace in namespaces:
         if namespace.is_default():
-            subgraph_name = ''
+            subgraph_name = 'cluster:default'
         else:
             subgraph_name = f'cluster:{namespace.metadata.path}'
         with dot.subgraph(None, subgraph_name) as ns_graph:
@@ -60,7 +60,9 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
 
             ns_graph.attr(fontcolor=subgraph_color.hex)
 
-            if namespace.metadata.running_process_command:
+            if namespace.is_default():
+                ns_label = ''
+            elif namespace.metadata.running_process_command:
                 ns_label = wrap_command(namespace.metadata.running_process_command)
             else:
                 ns_label = f'empty @ {namespace.metadata.path}'
