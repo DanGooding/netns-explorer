@@ -9,10 +9,20 @@ def interface_node_name(interface: model.Interface, namespace: model.Namespace) 
     return f'{namespace.metadata.path} {interface.name}'
 
 def route_node_name(route: model.Route, namespace: model.Namespace) -> str:
-    return f'{namespace.metadata.path} {route.destination} {route.interface_name}'
+    return f'{namespace.metadata.path} {route.destination}'
 
 def gateway_node_name(gateway: model.Gateway) -> str:
     return f'{gateway.address}'
+
+def interface_label(interface: model.Interface) -> str:
+    name = interface.name
+    if interface.name != "lo" and interface.state != "UP":
+        name += ' state:' + interface.state
+
+    if interface.address is not None:
+        name += f'\n{interface.address}'
+
+    return name
 
 def wrap_command(command: str | None) -> str:
     if not command:
@@ -71,14 +81,9 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
 
             for interface in namespace.interfaces:
 
-                if interface.address is not None:
-                    interface_label = f'{interface.name}\n{interface.address}'
-                else:
-                    interface_label = interface.name
-
                 ns_graph.node(
                     interface_node_name(interface, namespace),
-                    label=interface_label,
+                    label=interface_label(interface),
                     style='filled',
                     fillcolor=subgraph_color.hex,
                     fontcolor='white')
@@ -121,7 +126,8 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
                     interface_node_name(interface, namespace),
                     route_name,
                     dir='back',
-                    rank='same')
+                    rank='same',
+                    color='#888')
 
 
                 # gateway might be a bridge interface
