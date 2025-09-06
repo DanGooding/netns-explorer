@@ -61,10 +61,18 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
             ns_graph.attr(label=ns_label)
 
             for interface in namespace.interfaces:
-                ns_graph.node(interface_node_name(interface, namespace), interface.name,
-                              style='filled',
-                              fillcolor=subgraph_color.hex,
-                              fontcolor='white')
+
+                if interface.address is not None:
+                    interface_label = f'{interface.name}\n{interface.address}'
+                else:
+                    interface_label = interface.name
+
+                ns_graph.node(
+                    interface_node_name(interface, namespace),
+                    label=interface_label,
+                    style='filled',
+                    fillcolor=subgraph_color.hex,
+                    fontcolor='white')
 
                 if interface.veth_pair_id:
                     # undirected veth pair edge
