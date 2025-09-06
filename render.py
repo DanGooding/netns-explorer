@@ -1,6 +1,7 @@
 from typing import Iterable
 from colorhash import ColorHash
 import graphviz
+from pathlib import Path
 import model
 
 def interface_node_name(interface: model.Interface, namespace: model.Namespace) -> str:
@@ -31,7 +32,7 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
     dot = graphviz.Digraph()
     dot.attr(ranksep='2.0')
 
-    interfaces_by_namespace_and_name = {}
+    interfaces_by_namespace_and_name: dict[Path | None, dict[model.InterfaceName, model.Interface]] = {}
     for namespace in namespaces:
         interfaces_by_namespace_and_name[namespace.metadata.path] = {}
         for interface in namespace.interfaces:
@@ -72,6 +73,7 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
 
                     # we only trust ids to be global for virtual interfaces
                     other_name = virtual_interface_node_names_by_id.get(interface.veth_pair_id)
+                    assert other_name is not None
 
                     # don't add duplicate back edge
                     if my_name < other_name:
@@ -89,7 +91,7 @@ def render(namespaces: Iterable[model.Namespace]) -> graphviz.Digraph:
                         interface_node_name(bridge_interface, namespace),
                         interface_node_name(interface, namespace),
                         style='dashed',
-                    rank='same')
+                        rank='same')
 
             for route in namespace.routing_table:
                 route_name = route_node_name(route, namespace)

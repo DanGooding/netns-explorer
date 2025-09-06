@@ -16,7 +16,7 @@ type NamespacePath = Optional[Path]
 class Interface:
     id: int
     """ the global identifier - e.g. 123 for `if123`  """
-    name: str
+    name: InterfaceName
     """ the human-readable name - meaningful within the namespace """
 
     address: Optional[IPv4Address]
